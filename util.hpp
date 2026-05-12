@@ -66,6 +66,7 @@ float getDistance(std::vector<float> point1, std::vector<float> point2) {
 // posx posy
 // velx vely
 std::vector<std::vector<float>> handleWallCollision(Wall wall, Circle circle, int time) {
+    // cases not to handle collision for
     if (circle.position[1] < wall.position[1] - (wall.y / 2) - circle.radius || circle.position[1] > wall.position[1] + (wall.y / 2) + circle.radius) {
         std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
         return toreturn;
