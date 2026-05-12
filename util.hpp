@@ -28,12 +28,14 @@ class RigidObject {
 };
 
 class Circle : public RigidObject {
+    public:
     float radius;
 
     Circle(float r, float m, std::vector<float> vel, std::vector<float> acc, std::vector<float> pos) : RigidObject(m, vel, acc, pos), radius(r) {}
 };
 
 class Wall : public RigidObject {
+    public:
     float x;
     float y;
 
@@ -58,4 +60,22 @@ float getDistance(std::vector<float> point1, std::vector<float> point2) {
     float num = (float) pow((point1[0] - point2[0]), 2) + (float) pow((point1[1] - point2[1]), 2);
     float dist = (float) pow(num, 0.5);
     return dist;
+}
+
+// returns
+// posx posy
+// velx vely
+std::vector<std::vector<float>> handleWallCollision(Wall wall, Circle circle, int time) {
+    if (circle.position[1] < wall.position[1] - (wall.y / 2) - circle.radius || circle.position[1] > wall.position[1] + (wall.y / 2) + circle.radius) {
+        std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
+        return toreturn;
+    }
+    if (circle.position[1] < wall.position[1] - (wall.y / 2) - circle.radius && circle.velocity[1] < 0) {
+        std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
+        return toreturn;
+    }
+    if (circle.position[1] > wall.position[1] + (wall.y / 2) + circle.radius && circle.velocity[1] > 0) {
+        std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
+        return toreturn;
+    }
 }
