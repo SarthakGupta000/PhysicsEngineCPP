@@ -20,11 +20,8 @@ class RigidObject {
     std::vector<float> velocity; // 2d vector
     std::vector<float> acceleration; // 2d vector (usually with no x component)
     std::vector<float> position; // 2d vector
-    std::vector<float> force; // first zero, then used for adding up the vectors
 
-    RigidObject(float m, std::vector<float> vel, std::vector<float> acc, std::vector<float> pos) : mass(m), velocity(vel), acceleration(acc), position(pos) {
-        force = {0, 0};
-    }
+    RigidObject(float m, std::vector<float> vel, std::vector<float> acc, std::vector<float> pos) : mass(m), velocity(vel), acceleration(acc), position(pos) {}
 };
 
 class Circle : public RigidObject {
@@ -65,18 +62,29 @@ float getDistance(std::vector<float> point1, std::vector<float> point2) {
 // returns
 // posx posy
 // velx vely
-std::vector<std::vector<float>> handleWallCollision(Wall wall, Circle circle, int time) {
+std::vector<std::vector<float>> handleWallCollision(Wall wall, Circle circle, float time, float restitution, float friction) { // res and fric between 0 and 1
     // cases not to handle collision for
     if (circle.position[1] < wall.position[1] - (wall.y / 2) - circle.radius || circle.position[1] > wall.position[1] + (wall.y / 2) + circle.radius) {
         std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
         return toreturn;
     }
-    if (circle.position[1] < wall.position[1] - (wall.y / 2) - circle.radius && circle.velocity[1] < 0) {
+    if (circle.position[0] < wall.position[0] - (wall.x / 2) - circle.radius || circle.position[0] > wall.position[0] + (wall.x / 2) + circle.radius) {
         std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
         return toreturn;
     }
-    if (circle.position[1] > wall.position[1] + (wall.y / 2) + circle.radius && circle.velocity[1] > 0) {
-        std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
-        return toreturn;
+    // handling collision if possible
+    int topOrBottom = getDistance(circle.position, wall.position) > (wall.x / 2) ? 0 : 1;
+    std::vector<float> velclone = circle.velocity;
+    std::vector<float> posclone = circle.position;
+    if (topOrBottom) {
+        velclone[1] *= -1 * restitution; // makes bouncing possible
+        velclone[0] *= (1 - friction);
+    } else {
+        velclone[0] *= -1 * restitution; // makes bouncing possible
+        velclone[1] *= (1 - friction);
     }
+    posclone[1] += velclone[1] * time;
+    posclone[0] += velclone[0] * time;
+    std::vector<std::vector<float>> toreturn = {posclone, velclone};
+    return toreturn;
 }
