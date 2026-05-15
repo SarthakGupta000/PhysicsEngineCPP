@@ -1,5 +1,6 @@
 #include <iostream>
 #include "util.hpp"
+#define FPS 60
 
 int main() {
     Circle circle1(1, 10, {1, -1}, {0, 0}, {10, 10});
@@ -9,7 +10,7 @@ int main() {
     walls[0] = wall1;
     circles[0] = circle1;
     World world({0, -9.8}, "Physics Engine");
-    world.gameLoop(0.1, 0.9, 240, walls, 1, circles, 1);
+    world.gameLoop(0.1, 0.9, FPS, walls, 1, circles, 1);
     delete[] circles;
     delete[] walls;
 }
