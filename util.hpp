@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <string>
@@ -11,12 +12,16 @@ class RigidObject {
     std::vector<float> acceleration; // 2d vector (usually with no x component)
     std::vector<float> position; // 2d vector
 
+    RigidObject() {}
+
     RigidObject(float m, std::vector<float> vel, std::vector<float> acc, std::vector<float> pos) : mass(m), velocity(vel), acceleration(acc), position(pos) {}
 };
 
 class Circle : public RigidObject {
     public:
     float radius;
+
+    Circle() : RigidObject() {}
 
     Circle(float r, float m, std::vector<float> vel, std::vector<float> acc, std::vector<float> pos) : RigidObject(m, vel, acc, pos), radius(r) {}
 };
@@ -26,13 +31,15 @@ class Wall : public RigidObject {
     float x;
     float y;
 
-    Wall(float width, float height, std::vector<float> vel, std::vector<float> acc, std::vector<float> pos) : RigidObject(0, vel, acc, pos), x(width), y(height) {}
+    Wall() : RigidObject() {}
+
+    Wall(float width, float height, std::vector<float> pos) : RigidObject(0, {0, 0}, {0, 0}, pos), x(width), y(height) {}
 };
 
-std::vector<float> updateVelocity(Circle& circle, float time) { // not for collisions
+std::vector<float> updateVelocity(Circle& circle, float time, std::vector<float> g) { // not for collisions
     std::vector<float> v = circle.velocity;
-    v[0] += circle.acceleration[0] * time;
-    v[1] += circle.acceleration[1] * time;
+    v[0] += g[0] * time;
+    v[1] += g[1] * time;
     return v;
 }
 
@@ -81,20 +88,18 @@ std::vector<std::vector<float>> handleWallCollision(Wall& wall, Circle& circle, 
 
 class World {
     public:
-    int y; // height
-    int x; // width
     std::vector<float> g; // acceleration by gravity
     std::string window_name;
 
-    World(int height, int width, std::vector<float> gravity, std::string name) : y(height), x(width), window_name(name), g(gravity) {}
+    World(std::vector<float> gravity, std::string name) : window_name(name), g(gravity) {}
 
-    void gameLoop(float g, float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects); // main loop for code
+    void gameLoop(float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects); // main loop for code
 };
 
-void World::gameLoop(float g, float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects) { // g must be positive
+void World::gameLoop(float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects) { // g must be positive
     double dt = (double) 1 / fps;
     for (int x = 0; x < numOfCircleObjects; x++) {
-        circleObjects[x].acceleration = {0, (-1 * g)};
+        circleObjects[x].acceleration = g;
     }
     auto previousTime = std::chrono::steady_clock::now();
     auto frameTime = std::chrono::steady_clock::now() - previousTime; // dummy
@@ -105,9 +110,13 @@ void World::gameLoop(float g, float friction, float restitution, int fps, Wall *
         previousTime = currentTime;
         accumulator += frameTime;
         while ((std::chrono::duration<double>(accumulator).count()) >= dt) {
+            // printing output for each frame
+            for (int i = 0; i < numOfCircleObjects; i++) {
+                std::cout << "position of ball" << (i + 1) << "(" << circleObjects[i].position[0] << "," << circleObjects[i].position[1] << ")" << std::endl;
+            }
             // updating vel and pos
             for (int i = 0; i < numOfCircleObjects; i++) {
-                circleObjects[i].velocity = updateVelocity(circleObjects[i], dt);
+                circleObjects[i].velocity = updateVelocity(circleObjects[i], dt, g);
                 circleObjects[i].position = updatePosition(circleObjects[i], dt);
             }
             accumulator -= std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(dt));
@@ -122,5 +131,6 @@ void World::gameLoop(float g, float friction, float restitution, int fps, Wall *
             }
         }
         // rendering happens here
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 }
