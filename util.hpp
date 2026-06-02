@@ -59,7 +59,7 @@ float getDistance(std::vector<float> point1, std::vector<float> point2) {
 // returns
 // posx posy
 // velx vely
-std::vector<std::vector<float>> handleWallCollision(Wall& wall, Circle& circle, float time, float restitution, float friction) { // res and fric between 0 and 1
+std::vector<std::vector<float>> handleWallCollision(double softener, Wall& wall, Circle& circle, float time, float restitution, float friction) { // res and fric between 0 and 1
     // cases not to handle collision for
     if (circle.position[1] < wall.position[1] - (wall.y / 2) - circle.radius || circle.position[1] > wall.position[1] + (wall.y / 2) + circle.radius) {
         std::vector<std::vector<float>> toreturn = {circle.position, circle.velocity};
@@ -74,9 +74,11 @@ std::vector<std::vector<float>> handleWallCollision(Wall& wall, Circle& circle, 
     std::vector<float> velclone = circle.velocity;
     std::vector<float> posclone = circle.position;
     if (topOrBottom) {
+        posclone[1] = wall.position[1] + (wall.y / 2) + circle.radius + softener;
         velclone[1] *= -1 * restitution; // makes bouncing possible
         velclone[0] *= (1 - friction);
     } else {
+        posclone[0] = wall.position[0] + (wall.x / 2) + circle.radius + softener;
         velclone[0] *= -1 * restitution; // makes bouncing possible
         velclone[1] *= (1 - friction);
     }
@@ -93,10 +95,10 @@ class World {
 
     World(std::vector<float> gravity, std::string name) : window_name(name), g(gravity) {}
 
-    void gameLoop(float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects); // main loop for code
+    void gameLoop(double soft, float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects); // main loop for code
 };
 
-void World::gameLoop(float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects) { // g must be positive
+void World::gameLoop(double soft, float friction, float restitution, int fps, Wall *wallObjects, int numOfWallObjects, Circle *circleObjects, int numOfCircleObjects) { // g must be positive
     double dt = (double) 1 / fps;
     for (int x = 0; x < numOfCircleObjects; x++) {
         circleObjects[x].acceleration = g;
@@ -124,7 +126,7 @@ void World::gameLoop(float friction, float restitution, int fps, Wall *wallObjec
             std::vector<std::vector<float>> mat {{}, {}};
             for (int i = 0; i < numOfCircleObjects; i++) {
                 for (int j = 0; j < numOfWallObjects; j++) {
-                    mat = handleWallCollision(wallObjects[j], circleObjects[i], dt, restitution, friction);
+                    mat = handleWallCollision(soft, wallObjects[j], circleObjects[i], dt, restitution, friction);
                     circleObjects[i].velocity = mat[1];
                     circleObjects[i].position = mat[0];
                 }
